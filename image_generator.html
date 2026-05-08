@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator</title>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --bg: #f9fafb;
+            --text: #111827;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            background: var(--primary);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            width: 100%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+        }
+
+        .container {
+            margin-top: 40px;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 14px;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        label {
+            font-weight: 600;
+            margin-top: 12px;
+            display: block;
+        }
+
+        input[type="text"], input[type="number"], input[type="checkbox"] {
+            margin-top: 6px;
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row input {
+            flex: 1;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 600;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            width: 100%;
+        }
+
+        button:hover {
+            background: var(--primary-dark);
+        }
+
+        .image-gallery {
+            margin-top: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .image-card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 10px;
+            text-align: center;
+            transition: 0.3s;
+        }
+
+        .image-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+
+        .image-card img {
+            max-width: 100%;
+            border-radius: 10px;
+        }
+
+        .download-btn {
+            margin-top: 10px;
+            display: inline-block;
+            background: var(--success);
+            color: white;
+            padding: 10px 14px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            transition: 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #059669;
+        }
+
+        .loading {
+            margin-top: 15px;
+            font-size: 15px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🚀 AI Image Generator</h1>
+        <p>Create stunning AI-powered images instantly</p>
+    </header>
+
+    <div class="container">
+        <label for="prompt">Prompt</label>
+        <input id="prompt" type="text" placeholder="e.g. A futuristic city at sunset, cyberpunk style" />
+
+        <div class="form-row">
+            <div>
+                <label for="width">Width</label>
+                <input id="width" type="number" value="768" />
+            </div>
+            <div>
+                <label for="height">Height</label>
+                <input id="height" type="number" value="768" />
+            </div>
+        </div>
+
+        <label for="seed">Seed (optional)</label>
+        <input id="seed" type="text" placeholder="Leave empty for random" />
+
+        <label>
+            <input id="nologo" type="checkbox" checked />
+            No logo
+        </label>
+
+        <button onclick="generateImage()">🎨 Generate Image</button>
+
+        <div id="loading" class="loading" style="display:none;">⏳ Generating image...</div>
+        <div class="image-gallery" id="gallery"></div>
+    </div>
+
+    <script>
+        async function generateImage() {
+            const prompt = document.getElementById("prompt").value;
+            const width = document.getElementById("width").value;
+            const height = document.getElementById("height").value;
+            const seed = document.getElementById("seed").value;
+            const nologo = document.getElementById("nologo").checked;
+
+            const loading = document.getElementById("loading");
+            loading.style.display = "block";
+
+            try {
+                const res = await fetch(`/api/generate?prompt=${encodeURIComponent(prompt)}&width=${width}&height=${height}&seed=${seed}&nologo=${nologo}`);
+                const data = await res.json();
+
+                loading.style.display = "none";
+
+                const gallery = document.getElementById("gallery");
+
+                // Create card
+                const card = document.createElement("div");
+                card.className = "image-card";
+
+                // Image
+                const img = document.createElement("img");
+                img.src = data.image_url;
+
+                // Download
+                const downloadBtn = document.createElement("a");
+                downloadBtn.href = data.image_url;
+                downloadBtn.download = "generated_image.png";
+                downloadBtn.className = "download-btn";
+                downloadBtn.innerText = "⬇️ Download";
+
+                card.appendChild(img);
+                card.appendChild(downloadBtn);
+                gallery.prepend(card); // add new images on top
+            } catch (err) {
+                loading.style.display = "none";
+                alert("❌ Error generating image. Please try again.");
+            }
+        }
+    </script>
+</body>
+</html>
